@@ -12,7 +12,7 @@ class ProjectRepository(BaseRepository[Project]):
         stmt = select(Project).where(
             and_(Project.name == name, Project.client_id == client_id, Project.deleted_at == None)
         )
-        return db.execute(stmt).scalar_first()
+        return db.execute(stmt).scalars().first()
 
     def get_by_client_id(self, db: Session, client_id: int, skip: int = 0, limit: int = 100) -> Tuple[List[Project], int]:
         return self.get_multi_with_count(db, client_id=client_id, skip=skip, limit=limit)

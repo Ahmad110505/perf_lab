@@ -11,7 +11,7 @@ class BaseRepository(Generic[ModelType]):
 
     def get(self, db: Session, id: int) -> Optional[ModelType]:
         stmt = select(self.model).where(self.model.id == id, getattr(self.model, "deleted_at", None) == None)
-        return db.execute(stmt).scalar_first()
+        return db.execute(stmt).scalars().first()
 
     def get_multi(self, db: Session, skip: int = 0, limit: int = 100) -> List[ModelType]:
         stmt = select(self.model).where(getattr(self.model, "deleted_at", None) == None).offset(skip).limit(limit)

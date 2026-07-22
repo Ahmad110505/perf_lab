@@ -9,6 +9,6 @@ class UserRepository(BaseRepository[User]):
 
     def get_by_email(self, db: Session, email: str) -> User | None:
         stmt = select(User).where(User.email == email, User.deleted_at == None)
-        return db.execute(stmt).scalar_first()
+        return db.execute(stmt).scalars().first()
 
 user_repository = UserRepository()
