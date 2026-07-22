@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.core.database import get_db
-from app.api.dependencies import get_current_user_id
+from app.modules.auth.dependencies import get_current_user_id
 from app.modules.projects.schemas import ProjectCreate, ProjectUpdate, ProjectResponse, ProjectListResponse
 from app.modules.projects.services import project_service
 from app.modules.projects.models import ProjectStatus

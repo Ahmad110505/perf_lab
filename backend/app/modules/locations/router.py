@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.core.database import get_db
-from app.api.dependencies import get_current_user_id
+from app.modules.auth.dependencies import get_current_user_id
 from app.modules.locations.schemas import LocationCreate, LocationUpdate, LocationResponse, LocationListResponse
 from app.modules.locations.services import location_service
 
