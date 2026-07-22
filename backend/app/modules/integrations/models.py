@@ -7,6 +7,11 @@ class IntegrationProvider(str, enum.Enum):
     PROCORE = "procore"
     AUTODESK = "autodesk"
     GENERIC_WEBHOOK = "generic_webhook"
+    GOOGLE_ANALYTICS = "google_analytics"
+    GOOGLE_SEARCH_CONSOLE = "google_search_console"
+    META = "meta"
+    AHREFS = "ahrefs"
+    SEMRUSH = "semrush"
 
 class IntegrationStatus(str, enum.Enum):
     PENDING = "pending"

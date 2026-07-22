@@ -38,10 +38,17 @@ def run_sync_job(self, run_id: int):
             raw_data = connector.fetch_data()
             
             processed = 0
-            for item in raw_data:
-                normalized = connector.normalize(item)
-                processed += 1
-                
+            # Process Metrics via Sync Pipeline
+            from app.modules.metrics.services import metrics_service
+            metrics_service.ingest_and_normalize(
+                db=db,
+                run_id=run.id,
+                integration_id=integration.id,
+                provider=integration.provider,
+                raw_data=raw_data
+            )
+            processed = len(raw_data)
+
             run.status = RunStatus.SUCCESS
             run.records_processed = processed
             run.finished_at = datetime.now(timezone.utc)
