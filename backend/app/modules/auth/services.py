@@ -4,7 +4,9 @@ from app.shared.service import BaseService
 from app.modules.auth.repository import UserRepository, user_repository
 from app.modules.auth.schemas import UserCreate, UserResponse, LoginRequest, TokenResponse
 from app.modules.auth.models import User
-from app.modules.auth.security import get_password_hash, verify_password, create_access_token
+from app.modules.auth.security import get_password_hash, verify_password, create_access_token, create_refresh_token
+from jose import jwt, JWTError
+from app.core.config import settings
 
 class AuthService(BaseService[UserRepository]):
     def __init__(self):
@@ -29,7 +31,28 @@ class AuthService(BaseService[UserRepository]):
         if not user or not verify_password(login_req.password, user.password_hash):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
         
-        token = create_access_token(user.id)
-        return TokenResponse(access_token=token)
+        access_token = create_access_token(user.id)
+        refresh_token = create_refresh_token(user.id)
+        return TokenResponse(access_token=access_token, refresh_token=refresh_token)
+
+    def refresh_access_token(self, db: Session, refresh_token: str) -> TokenResponse:
+        try:
+            payload = jwt.decode(refresh_token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+            if not payload.get("refresh"):
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+            user_id_str: str = payload.get("sub")
+            if user_id_str is None:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+            user_id = int(user_id_str)
+        except JWTError:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+            
+        user = self.repository.get(db, id=user_id)
+        if not user or user.deleted_at:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive")
+            
+        new_access_token = create_access_token(user.id)
+        new_refresh_token = create_refresh_token(user.id)
+        return TokenResponse(access_token=new_access_token, refresh_token=new_refresh_token)
 
 auth_service = AuthService()

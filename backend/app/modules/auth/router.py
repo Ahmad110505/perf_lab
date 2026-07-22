@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Body
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.modules.auth.schemas import UserCreate, UserResponse, LoginRequest, TokenResponse
@@ -17,6 +17,11 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
 def login(login_req: LoginRequest, db: Session = Depends(get_db)):
     """Authenticate a user and return a token."""
     return auth_service.authenticate_user(db, login_req=login_req)
+
+@router.post("/refresh", response_model=TokenResponse)
+def refresh_token(refresh_token: str = Body(..., embed=True), db: Session = Depends(get_db)):
+    """Refresh an access token."""
+    return auth_service.refresh_access_token(db, refresh_token=refresh_token)
 
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
