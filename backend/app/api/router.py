@@ -10,5 +10,7 @@ from app.modules.projects.router import router as projects_router
 api_router.include_router(projects_router, prefix="/projects", tags=["projects"])
 from app.modules.locations.router import router as locations_router
 from app.modules.integrations.router import router as integrations_router
+from app.modules.connectors.router import router as connectors_router
 api_router.include_router(locations_router, prefix="/locations", tags=["locations"])
 api_router.include_router(integrations_router, prefix="/integrations", tags=["integrations"])
+api_router.include_router(connectors_router, tags=["connectors"])

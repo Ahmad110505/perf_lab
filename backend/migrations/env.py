@@ -9,6 +9,7 @@ from app.modules.clients.models import Client
 from app.modules.projects.models import Project
 from app.modules.locations.models import Location
 from app.modules.integrations.models import Integration
+from app.modules.connectors.models import ConnectorRun
 from app.core.config import settings
 
 config = context.config
