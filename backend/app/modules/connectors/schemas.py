@@ -11,6 +11,7 @@ class ConnectorRunResponse(BaseModel):
     finished_at: Optional[datetime] = None
     error_message: Optional[str] = None
     records_processed: Optional[int] = None
+    retry_count: int
     created_at: datetime
     
     model_config = ConfigDict(from_attributes=True)

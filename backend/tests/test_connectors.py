@@ -10,8 +10,13 @@ client = TestClient(app)
 @pytest.fixture(autouse=True)
 def override_auth():
     app.dependency_overrides[get_current_user_id] = lambda: 1
+    
+    from app.worker.celery_app import celery_app
+    celery_app.conf.update(task_always_eager=True)
+    
     yield
     app.dependency_overrides.clear()
+    celery_app.conf.update(task_always_eager=False)
 
 def create_integration(provider="procore", status="connected"):
     client_res = client.post("/api/v1/clients", json={"name": f"Test Client {uuid.uuid4()}"})
@@ -38,7 +43,7 @@ def test_sync_bad_integration():
     assert res.status_code == 404
 
 def test_sync_bad_status():
-    int_id = create_integration(status="error")
+    int_id = create_integration(status="disabled")
     res = client.post(f"/api/v1/integrations/{int_id}/sync")
     assert res.status_code == 400
 
@@ -50,6 +55,11 @@ def test_sync_success(mock_fetch):
     res = client.post(f"/api/v1/integrations/{int_id}/sync")
     assert res.status_code == 200
     data = res.json()
+    assert data["status"] == "queued"
+    
+    # Check the updated state from eager mode task
+    run_res = client.get(f"/api/v1/integrations/{int_id}/runs")
+    data = run_res.json()["items"][0]
     assert data["status"] == "success"
     assert data["records_processed"] == 1
     assert data["error_message"] is None
@@ -59,14 +69,20 @@ def test_sync_success(mock_fetch):
 
 @patch("app.modules.connectors.providers.procore.ProcoreConnector.fetch_data")
 def test_sync_failure(mock_fetch):
-    mock_fetch.side_effect = Exception("Network timeout")
+    from app.modules.connectors.exceptions import TerminalSyncError
+    mock_fetch.side_effect = TerminalSyncError("Auth failure")
     int_id = create_integration(status="connected")
     
     res = client.post(f"/api/v1/integrations/{int_id}/sync")
     assert res.status_code == 200
     data = res.json()
+    assert data["status"] == "queued"
+    
+    # Check the updated state from eager mode task
+    run_res = client.get(f"/api/v1/integrations/{int_id}/runs")
+    data = run_res.json()["items"][0]
     assert data["status"] == "failed"
-    assert data["error_message"] == "Network timeout"
+    assert data["error_message"] == "Terminal error: Auth failure"
     
     int_res = client.get(f"/api/v1/integrations/{int_id}")
     assert int_res.json()["status"] == "error"

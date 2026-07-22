@@ -19,6 +19,7 @@ class ConnectorRun(Base, AuditMixin):
     finished_at = Column(DateTime(timezone=True), nullable=True)
     error_message = Column(Text, nullable=True)
     records_processed = Column(Integer, nullable=True)
+    retry_count = Column(Integer, default=0, nullable=False)
 
     integration = relationship("Integration", backref="connector_runs")
 

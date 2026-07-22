@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.modules.auth.dependencies import get_current_user_id
@@ -15,6 +15,25 @@ def trigger_sync(
 ):
     """Trigger a sync for a specific integration."""
     return connector_service.trigger_sync(db, integration_id=integration_id)
+
+@router.get("/connector-runs/failed", response_model=ConnectorRunListResponse)
+def list_failed_runs(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
+):
+    """List all failed connector runs."""
+    return connector_service.get_failed_runs(db=db, skip=skip, limit=limit)
+
+@router.post("/connector-runs/{run_id}/retry", response_model=ConnectorRunResponse)
+def retry_failed_run(
+    run_id: int,
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
+):
+    """Retry a failed connector run."""
+    return connector_service.retry_run(db=db, run_id=run_id)
 
 @router.get("/integrations/{integration_id}/runs", response_model=ConnectorRunListResponse)
 def read_integration_runs(
