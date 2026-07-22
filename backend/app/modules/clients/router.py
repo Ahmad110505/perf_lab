@@ -10,6 +10,8 @@ from app.modules.projects.services import project_service
 from app.modules.projects.models import ProjectStatus
 from app.modules.locations.schemas import LocationListResponse
 from app.modules.locations.services import location_service
+from app.modules.integrations.schemas import IntegrationListResponse
+from app.modules.integrations.services import integration_service
 
 router = APIRouter()
 
@@ -60,3 +62,14 @@ def read_client_locations(
 ):
     """Retrieve all locations for a specific client."""
     return location_service.get_locations(db, client_id=client_id, city=city, country=country, skip=skip, limit=limit)
+
+@router.get("/{client_id}/integrations", response_model=IntegrationListResponse)
+def read_client_integrations(
+    client_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
+):
+    """Retrieve all integrations for a specific client."""
+    return integration_service.get_integrations(db, client_id=client_id, skip=skip, limit=limit)

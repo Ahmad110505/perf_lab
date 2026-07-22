@@ -8,6 +8,7 @@ from app.modules.auth.models import User
 from app.modules.clients.models import Client
 from app.modules.projects.models import Project
 from app.modules.locations.models import Location
+from app.modules.integrations.models import Integration
 from app.core.config import settings
 
 config = context.config
