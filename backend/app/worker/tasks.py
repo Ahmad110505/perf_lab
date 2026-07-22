@@ -99,3 +99,17 @@ def run_sync_job(self, run_id: int):
             
     finally:
         db.close()
+
+@celery_app.task
+def calculate_dashboard_summaries():
+    db: Session = SessionLocal()
+    try:
+        from app.modules.projects.repository import project_repository
+        from app.modules.projects.models import ProjectStatus
+        from app.modules.dashboard.services import dashboard_builder
+        
+        projects, total = project_repository.get_multi_with_count(db, status=ProjectStatus.active, limit=1000)
+        for p in projects:
+            dashboard_builder.build_summary_for_project(db, p.id)
+    finally:
+        db.close()
