@@ -3,12 +3,23 @@ from app.modules.metrics import repository as metrics_repo
 from app.modules.metrics.models import RawMetric
 from app.modules.integrations.models import IntegrationProvider
 from app.modules.metrics.normalizers.google_analytics import GoogleAnalyticsNormalizer
+from app.modules.metrics.normalizers.google_search_console import GoogleSearchConsoleNormalizer
+from app.modules.metrics.normalizers.meta import MetaNormalizer
+from app.modules.metrics.normalizers.ahrefs import AhrefsNormalizer
+from app.modules.metrics.normalizers.semrush import SEMrushNormalizer
 from typing import Dict, Any, List
 
 def get_normalizer(provider: str):
     if provider == IntegrationProvider.GOOGLE_ANALYTICS:
         return GoogleAnalyticsNormalizer()
-    # Throwing NotImplementedError ensures we strictly catch unsupported providers
+    elif provider == IntegrationProvider.GOOGLE_SEARCH_CONSOLE:
+        return GoogleSearchConsoleNormalizer()
+    elif provider == IntegrationProvider.META:
+        return MetaNormalizer()
+    elif provider == IntegrationProvider.AHREFS:
+        return AhrefsNormalizer()
+    elif provider == IntegrationProvider.SEMRUSH:
+        return SEMrushNormalizer()
     raise NotImplementedError(f"Normalizer for {provider} not implemented")
 
 class MetricsService:
@@ -19,12 +30,10 @@ class MetricsService:
             return
         
         for payload in raw_data:
-            # Assuming payload contains project_id as agreed
             project_id = payload.get("project_id")
             if not project_id:
                 continue
                 
-            # 1. Insert Raw Metric
             raw = metrics_repo.insert_raw_metric(
                 db=db, 
                 connector_run_id=run_id, 
@@ -33,13 +42,8 @@ class MetricsService:
                 payload=payload
             )
             
-            # 2. Normalize
             normalized = normalizer.normalize(payload)
-            
-            # 3. Upsert Normalized Metrics
             metrics_repo.upsert_normalized_metrics(db, raw.id, normalized)
-            
-            # Flush changes per payload to ensure IDs are available
             db.flush()
 
     def rebuild_normalized_metrics(self, db: Session, project_id: int | None = None) -> None:

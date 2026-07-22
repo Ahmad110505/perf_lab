@@ -44,11 +44,9 @@ def create_integration(provider="google_analytics"):
 def test_metrics_pipeline():
     int_id, p_id = create_integration("google_analytics")
     
-    # Run sync job
     res = client.post(f"/api/v1/integrations/{int_id}/sync")
     assert res.status_code == 200
     
-    # Verify records created
     db = SessionLocal()
     try:
         raw_metrics = db.query(RawMetric).filter(RawMetric.project_id == p_id).all()
@@ -57,21 +55,18 @@ def test_metrics_pipeline():
         normalized = db.query(NormalizedMetric).filter(NormalizedMetric.project_id == p_id).all()
         assert len(normalized) == 4
         
-        # Check upsert logic
         res2 = client.post(f"/api/v1/integrations/{int_id}/sync")
         run_res2 = client.get(f"/api/v1/integrations/{int_id}/runs")
         run_data = run_res2.json()["items"][0]
         assert run_data["status"] == "success", f"Run failed: {run_data.get('error_message')}"
         
         db.commit()
-        # Raw metrics should double, normalized should stay the same due to upsert
         raw_metrics_after = db.query(RawMetric).filter(RawMetric.project_id == p_id).all()
         assert len(raw_metrics_after) == 4
         
         normalized_after = db.query(NormalizedMetric).filter(NormalizedMetric.project_id == p_id).all()
         assert len(normalized_after) == 4
         
-        # Test Rebuild
         db.query(NormalizedMetric).filter(NormalizedMetric.project_id == p_id).delete()
         db.commit()
         
@@ -81,10 +76,20 @@ def test_metrics_pipeline():
         normalized_rebuilt = db.query(NormalizedMetric).filter(NormalizedMetric.project_id == p_id).all()
         assert len(normalized_rebuilt) == 4
         
-        # Test API
         api_res = client.get(f"/api/v1/projects/{p_id}/metrics")
         assert api_res.status_code == 200
         assert api_res.json()["total"] == 4
         
     finally:
         db.close()
+
+def test_all_normalizers():
+    from app.modules.metrics.services import get_normalizer
+    providers = ["google_analytics", "google_search_console", "meta", "ahrefs", "semrush"]
+    
+    for p in providers:
+        normalizer = get_normalizer(p)
+        payload = {"project_id": 1, "date": "2023-01-01", "clicks": 100, "sessions": 100, "spend": 50.0, "domain_rating": 50, "organic_keywords": 100}
+        result = normalizer.normalize(payload)
+        assert len(result) > 0
+        assert result[0].project_id == 1

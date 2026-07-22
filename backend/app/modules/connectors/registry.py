@@ -4,6 +4,10 @@ from app.modules.connectors.providers.procore import ProcoreConnector
 from app.modules.connectors.providers.autodesk import AutodeskConnector
 from app.modules.connectors.providers.generic_webhook import GenericWebhookConnector
 from app.modules.connectors.providers.google_analytics import GoogleAnalyticsConnector
+from app.modules.connectors.providers.google_search_console import GoogleSearchConsoleConnector
+from app.modules.connectors.providers.meta import MetaConnector
+from app.modules.connectors.providers.ahrefs import AhrefsConnector
+from app.modules.connectors.providers.semrush import SEMrushConnector
 
 def get_connector_for_provider(provider: str) -> Type[BaseConnector]:
     if provider == "procore":
@@ -14,4 +18,12 @@ def get_connector_for_provider(provider: str) -> Type[BaseConnector]:
         return GenericWebhookConnector
     elif provider == "google_analytics":
         return GoogleAnalyticsConnector
+    elif provider == "google_search_console":
+        return GoogleSearchConsoleConnector
+    elif provider == "meta":
+        return MetaConnector
+    elif provider == "ahrefs":
+        return AhrefsConnector
+    elif provider == "semrush":
+        return SEMrushConnector
     raise ValueError(f"Unknown provider: {provider}")

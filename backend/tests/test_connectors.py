@@ -57,7 +57,6 @@ def test_sync_success(mock_fetch):
     data = res.json()
     assert data["status"] == "queued"
     
-    # Check the updated state from eager mode task
     run_res = client.get(f"/api/v1/integrations/{int_id}/runs")
     data = run_res.json()["items"][0]
     assert data["status"] == "success"
@@ -78,7 +77,6 @@ def test_sync_failure(mock_fetch):
     data = res.json()
     assert data["status"] == "queued"
     
-    # Check the updated state from eager mode task
     run_res = client.get(f"/api/v1/integrations/{int_id}/runs")
     data = run_res.json()["items"][0]
     assert data["status"] == "failed"
@@ -86,3 +84,15 @@ def test_sync_failure(mock_fetch):
     
     int_res = client.get(f"/api/v1/integrations/{int_id}")
     assert int_res.json()["status"] == "error"
+
+def test_all_marketing_connectors_instantiation():
+    from app.modules.connectors.registry import get_connector_for_provider
+    providers = ["google_analytics", "google_search_console", "meta", "ahrefs", "semrush"]
+    
+    for p in providers:
+        ConnectorClass = get_connector_for_provider(p)
+        connector = ConnectorClass(config={"project_id": 1})
+        connector.authenticate()
+        data = connector.fetch_data()
+        assert len(data) > 0
+        assert data[0]["project_id"] == 1
