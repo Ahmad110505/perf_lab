@@ -12,6 +12,7 @@ from app.modules.integrations.models import Integration
 from app.modules.connectors.models import ConnectorRun
 from app.modules.metrics.models import RawMetric, NormalizedMetric
 from app.modules.dashboard.models import DashboardSummary
+from app.modules.reports.models import Report
 from app.core.config import settings
 
 config = context.config
