@@ -16,6 +16,16 @@ def trigger_sync(
     """Trigger a sync for a specific integration."""
     return connector_service.trigger_sync(db, integration_id=integration_id)
 
+@router.post("/integrations/{integration_id}/action")
+def execute_integration_action(
+    integration_id: int,
+    action: str = Query("query_keywords"),
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
+):
+    """Execute a provider-specific action for an integration."""
+    return connector_service.execute_provider_action(db, integration_id=integration_id, action=action)
+
 @router.get("/connector-runs/failed", response_model=ConnectorRunListResponse)
 def list_failed_runs(
     skip: int = Query(0, ge=0),
