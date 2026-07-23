@@ -6,6 +6,7 @@ from app.modules.integrations.repository import IntegrationRepository, integrati
 from app.modules.integrations.schemas import IntegrationCreate, IntegrationUpdate
 from app.modules.integrations.models import Integration, IntegrationProvider, IntegrationStatus
 from app.modules.clients.repository import client_repository
+from app.core.security import encrypt_credential
 
 class IntegrationService(BaseService[IntegrationRepository]):
     def __init__(self):
@@ -32,11 +33,20 @@ class IntegrationService(BaseService[IntegrationRepository]):
         if existing:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Integration for provider {integration_in.provider.value} already exists for this client")
 
-        return self.repository.create(db, obj_in=integration_in.model_dump())
+        obj_dict = integration_in.model_dump()
+        obj_dict["status"] = IntegrationStatus.CONNECTED
+
+        # Encrypt API Key at rest if provided in config and credentials_ref not explicitly provided
+        if not obj_dict.get("credentials_ref") and integration_in.config and "api_key" in integration_in.config:
+            obj_dict["credentials_ref"] = encrypt_credential(str(integration_in.config["api_key"]))
+
+        return self.repository.create(db, obj_in=obj_dict)
 
     def update_integration(self, db: Session, integration_id: int, integration_in: IntegrationUpdate) -> Integration:
         integration = self.get_integration(db, integration_id)
         update_data = integration_in.model_dump(exclude_unset=True)
+        if "config" in update_data and update_data["config"] and "api_key" in update_data["config"]:
+            integration.credentials_ref = encrypt_credential(str(update_data["config"]["api_key"]))
         for field, value in update_data.items():
             setattr(integration, field, value)
         db.commit()
