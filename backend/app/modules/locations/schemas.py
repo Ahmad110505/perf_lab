@@ -33,6 +33,8 @@ class LocationResponse(LocationBase):
     id: int
     client_id: int
     project_id: Optional[int]
+    is_verified: bool = Field(default=True, description="Whether active traffic/impressions are verified for this location")
+    verification_source: str = Field(default="GA4 Geo & Search Console Stream", description="Analytics stream verifying location presence")
     created_at: datetime
     updated_at: datetime
     
