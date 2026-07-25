@@ -1,0 +1,79 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/*'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: marketing_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+
+    - name: Install dependencies
+      working-directory: ./backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov ruff httpx cryptography
+
+    - name: Lint with Ruff
+      working-directory: ./backend
+      run: |
+        ruff check . || true
+
+    - name: Run Alembic Migrations
+      working-directory: ./backend
+      env:
+        MYSQL_USER: root
+        MYSQL_PASSWORD: root
+        MYSQL_SERVER: 127.0.0.1
+        MYSQL_PORT: 3306
+        MYSQL_DB: marketing_db
+      run: |
+        alembic upgrade head
+
+    - name: Run Pytest with Coverage
+      working-directory: ./backend
+      env:
+        MYSQL_USER: root
+        MYSQL_PASSWORD: root
+        MYSQL_SERVER: 127.0.0.1
+        MYSQL_PORT: 3306
+        MYSQL_DB: marketing_db
+        JWT_SECRET_KEY: testsecretkey
+      run: |
+        python -m pytest --cov=app --cov-fail-under=70
