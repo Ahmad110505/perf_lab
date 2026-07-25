@@ -27,7 +27,11 @@ def run_sync_job(self, run_id: int):
         if not run.started_at:
             run.started_at = datetime.now(timezone.utc)
         
-        run.retry_count = self.request.retries
+        try:
+            retries = getattr(self.request, "retries", 0) if hasattr(self, "request") and self.request else 0
+        except Exception:
+            retries = 0
+        run.retry_count = retries
         db.commit()
 
         try:

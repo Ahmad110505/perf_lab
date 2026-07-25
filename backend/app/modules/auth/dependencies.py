@@ -12,7 +12,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login
 def get_current_user(token: str | None = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
-        
+
     if token == "demo-bypass-token":
         user = user_repository.get(db, id=1)
         if not user:
@@ -31,7 +31,6 @@ def get_current_user(token: str | None = Depends(oauth2_scheme), db: Session = D
     user = user_repository.get(db, id=user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
-        
     return user
 
 def get_current_user_id(user: User = Depends(get_current_user)) -> int:

@@ -11,6 +11,10 @@ class BaseAPIException(Exception):
         self.code = code
         super().__init__(message)
 
+class TransientSyncError(BaseAPIException):
+    def __init__(self, message: str):
+        super().__init__(message=message, status_code=status.HTTP_502_BAD_GATEWAY, code="transient_sync_error")
+
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error("Unhandled exception", exc_info=exc, url=str(request.url))
     return JSONResponse(

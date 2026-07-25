@@ -1,0 +1,21 @@
+# Python bytecode & cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment & local files
+.env
+.env.local
+venv/
+.venv/
+
+# Database & reports storage
+*.db
+*.sqlite3
+backend/storage/reports/*.csv
+
+# External / Zero2Mill cloned modules
+Healt_dashboard/
+next-shadcn-admin-dashboard/
+remove_mocks.py

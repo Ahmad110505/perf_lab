@@ -7,6 +7,7 @@ from app.modules.metrics.normalizers.google_search_console import GoogleSearchCo
 from app.modules.metrics.normalizers.meta import MetaNormalizer
 from app.modules.metrics.normalizers.ahrefs import AhrefsNormalizer
 from app.modules.metrics.normalizers.semrush import SEMrushNormalizer
+from app.modules.metrics.normalizers.google_business_profile import GoogleBusinessProfileNormalizer
 from typing import Dict, Any, List
 
 def get_normalizer(provider: str):
@@ -20,6 +21,8 @@ def get_normalizer(provider: str):
         return AhrefsNormalizer()
     elif provider == IntegrationProvider.SEMRUSH:
         return SEMrushNormalizer()
+    elif provider == IntegrationProvider.GOOGLE_BUSINESS_PROFILE:
+        return GoogleBusinessProfileNormalizer()
     raise NotImplementedError(f"Normalizer for {provider} not implemented")
 
 class MetricsService:
@@ -29,22 +32,29 @@ class MetricsService:
         except NotImplementedError:
             return
         
+        project_ids_to_update = set()
         for payload in raw_data:
             project_id = payload.get("project_id")
             if not project_id:
                 continue
                 
+            project_ids_to_update.add(int(project_id))
             raw = metrics_repo.insert_raw_metric(
                 db=db, 
                 connector_run_id=run_id, 
                 integration_id=integration_id, 
-                project_id=project_id, 
+                project_id=int(project_id), 
                 payload=payload
             )
             
             normalized = normalizer.normalize(payload)
             metrics_repo.upsert_normalized_metrics(db, raw.id, normalized)
-            db.flush()
+            
+        db.commit()
+
+        from app.modules.dashboard.services import dashboard_builder
+        for pid in project_ids_to_update:
+            dashboard_builder.build_summary_for_project(db, pid)
 
     def rebuild_normalized_metrics(self, db: Session, project_id: int | None = None) -> None:
         query = db.query(RawMetric)

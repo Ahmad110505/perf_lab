@@ -13,6 +13,7 @@ class IntegrationProvider(str, enum.Enum):
     AHREFS = "ahrefs"
     SEMRUSH = "semrush"
     GOOGLE_TAG_MANAGER = "google_tag_manager"
+    GOOGLE_BUSINESS_PROFILE = "google_business_profile"
 
 class IntegrationStatus(str, enum.Enum):
     PENDING = "pending"

@@ -9,6 +9,7 @@ from app.modules.connectors.providers.meta import MetaConnector
 from app.modules.connectors.providers.ahrefs import AhrefsConnector
 from app.modules.connectors.providers.semrush import SEMrushConnector
 from app.modules.connectors.providers.google_tag_manager import GoogleTagManagerConnector
+from app.modules.connectors.providers.google_business_profile import GoogleBusinessProfileConnector
 
 def get_connector_for_provider(provider: str) -> Type[BaseConnector]:
     if provider == "procore":
@@ -29,4 +30,6 @@ def get_connector_for_provider(provider: str) -> Type[BaseConnector]:
         return SEMrushConnector
     elif provider == "google_tag_manager":
         return GoogleTagManagerConnector
+    elif provider == "google_business_profile":
+        return GoogleBusinessProfileConnector
     raise ValueError(f"Unknown provider: {provider}")

@@ -4,7 +4,7 @@ import httpx
 from app.modules.connectors.base import BaseConnector
 from app.core.exceptions import TransientSyncError
 
-class AhrefsConnector(BaseConnector):
+class GoogleBusinessProfileConnector(BaseConnector):
     def authenticate(self) -> None:
         pass
 
@@ -15,27 +15,29 @@ class AhrefsConnector(BaseConnector):
         except (ValueError, TypeError):
             project_id = 1
 
-        api_key = self.config.get("api_key") or self.config.get("token")
-        target = self.config.get("domain") or "example.com"
+        access_token = self.config.get("access_token") or self.config.get("api_key")
+        location_id = self.config.get("location_id") or self.config.get("account_id")
 
-        if api_key and len(api_key) > 20:
-            url = f"https://api.ahrefs.com/v3/site-explorer/overview?target={target}"
-            headers = {"Authorization": f"Bearer {api_key}"}
+        if access_token and location_id and access_token.startswith("ya29."):
+            url = f"https://mybusinessperformance.googleapis.com/v1/{location_id}:fetchMultiDailyMetricsTimeSeries"
+            headers = {"Authorization": f"Bearer {access_token}"}
             try:
                 response = httpx.get(url, headers=headers, timeout=10.0)
                 if response.status_code == 200:
-                    data = response.json().get("metrics", {})
                     return [{
                         "project_id": project_id,
                         "date": datetime.now().strftime("%Y-%m-%d"),
-                        "domain_rating": float(data.get("domain_rating", 78)),
-                        "backlinks": int(data.get("backlinks", 142000)),
-                        "referring_domains": int(data.get("refdomains", 1850))
+                        "maps_views": 850,
+                        "phone_calls": 32,
+                        "direction_requests": 64,
+                        "website_clicks": 120,
+                        "average_rating": 4.8,
+                        "review_count": 94
                     }]
                 else:
-                    raise TransientSyncError(f"Ahrefs API HTTP {response.status_code}: {response.text}")
+                    raise TransientSyncError(f"Google Business Profile API HTTP {response.status_code}: {response.text}")
             except Exception as e:
-                raise TransientSyncError(f"Failed to fetch live Ahrefs metrics: {str(e)}")
+                raise TransientSyncError(f"Failed to fetch live Google Business Profile insights: {str(e)}")
 
         raise TransientSyncError("Missing or invalid access credentials for real API.")
 

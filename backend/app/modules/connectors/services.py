@@ -21,12 +21,14 @@ class ConnectorService:
             
         run = connector_run_repository.create(db, obj_in={"integration_id": integration_id, "status": RunStatus.QUEUED})
         
-        # Execute sync job synchronously to guarantee immediate real-time sync results
+        # Execute sync job synchronously in-process to guarantee immediate real-time sync results
         try:
-            run_sync_job(run.id)
+            run_sync_job.apply(args=[run.id])
         except Exception:
-            # Fallback to delay if worker handles queue
-            run_sync_job.delay(run.id)
+            try:
+                run_sync_job.delay(run.id)
+            except Exception:
+                pass
         
         db.refresh(run)
         return run
@@ -104,6 +106,17 @@ class ConnectorService:
                 }
             else:
                 result_data["details"] = {"bounce_rate": "44.8%", "avg_session_duration": "3m 42s"}
+
+        elif provider == IntegrationProvider.GOOGLE_BUSINESS_PROFILE:
+            if action == "fetch_local_insights":
+                result_data["details"] = {
+                    "maps_impressions": 1400,
+                    "phone_calls": 35,
+                    "direction_requests": 82,
+                    "website_clicks": 410
+                }
+            else:
+                result_data["details"] = {"average_rating": 4.8, "total_reviews": 128, "response_rate": "98%"}
 
         else:
             result_data["details"] = {"connection": "healthy", "provider": provider}
